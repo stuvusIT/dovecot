@@ -1,0 +1,22 @@
+galaxy_info:
+  author: Janne Heß
+  description: Set up an advanced Dovecot installlation
+  company: stuvus (https://stuvus.uni-stuttgart.de)
+
+  license: CC-BY-SA
+
+  min_ansible_version: 2.5
+
+  platforms:
+    - name: Debian
+      versions:
+        - stretch
+
+  galaxy_tags:
+    - dovecot
+    - imap
+    - mail
+    - sieve
+    - rspamd
+
+dependencies: []

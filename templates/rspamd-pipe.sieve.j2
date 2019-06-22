@@ -1,0 +1,19 @@
+# {{ ansible_managed }}
+require "vnd.dovecot.pipe";
+require "copy";
+require "environment";
+require "variables";
+require "imapsieve";
+
+{% if item == 'ham' %}
+if environment :matches "imap.mailbox" "*" {
+	set "mailbox" "${1}";
+}
+
+if string "${mailbox}" "INBOX.Trash" {
+	stop;
+}
+{% endif %}
+
+
+pipe :copy "report-{{ item }}";

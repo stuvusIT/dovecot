@@ -1,0 +1,11 @@
+---
+- name: Reload dovecot
+  systemd:
+    name: dovecot.service
+    state: reloaded
+
+- name: Restart dovecot
+  systemd:
+    name: dovecot.service
+    state: restarted
+    daemon_reload: true
