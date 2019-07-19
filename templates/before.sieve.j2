@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+require "spamtestplus";
+require "relational";
+require "comparator-i;ascii-numeric";
+require "fileinto";
+
+if spamtest :value "gt" :comparator "i;ascii-numeric" :percent "50" {
+	fileinto "Junk";
+}

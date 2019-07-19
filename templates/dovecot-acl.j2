@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+
+{% for mb in dovecot_protected_mailboxes %}
+{{ mb }} owner lrwstipea
+{% endfor %}
+
+{{ dovecot_extra_acls }}

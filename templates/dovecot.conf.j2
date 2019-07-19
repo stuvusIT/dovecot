@@ -1,0 +1,239 @@
+# {{ ansible_managed }}
+{%- macro dovebool(val) %}{% if val %}yes{% else %}no{% endif %}{% endmacro %}
+
+# Files and directories
+base_dir = /run/dovecot
+mail_location = maildir:{{ dovecot_mail_location }}/private/%u/maildir:LAYOUT=fs:CONTROL={{ dovecot_mail_location }}/private/%u/control:INDEX={{ dovecot_mail_location }}/private/%u/index:VOLATILEDIR=/tmp/dovecot/%u:UTF-8
+ssl_dh = <{{ dovecot_dhparam }}
+ssl_client_ca_dir = {{ dovecot_ca_dir }}
+{% if dovecot_dsync %}
+# for dsync
+ssl_cert = <{{ dovecot_dsync_tls_cert }}
+ssl_key = <{{ dovecot_dsync_tls_key }}
+{% endif %}
+
+# Basic settings
+instance_name = {{ inventory_hostname }}
+log_path = /dev/stderr
+log_timestamp = ""
+listen = {{ dovecot_listen | join(', ') }}
+protocols = imap sieve
+verbose_proctitle = yes
+default_client_limit = {{ dovecot_default_client_limit }}
+service log {
+	user = dovenull
+}
+
+# Users and groups
+default_internal_user = dovecot
+default_internal_group = dovecot
+mail_uid = {{ dovecot_vmail_user }}
+mail_gid = {{ dovecot_vmail_group }}
+
+# TLS
+ssl = {{ dovecot_tls }}
+ssl_min_protocol = {{ dovecot_tls_min }}
+ssl_prefer_server_ciphers = yes
+ssl_cipher_list = {{ dovecot_tls_ciphers | join(':') }}
+
+# Auth
+auth_mechanisms = plain login
+auth_master_user_separator = *
+disable_plaintext_auth = {{ dovebool(dovecot_disable_plain) }}
+auth_worker_max_count = {{ dovecot_auth_worker_max_count }}
+passdb {
+	driver = ldap
+	args = /etc/dovecot/ldap-passdb.conf
+}
+{% if dovecot_ldap_master_pass_filter != None %}
+passdb {
+	driver = ldap
+	master = yes
+	pass = yes
+	args = /etc/dovecot/ldap-master.conf
+}
+{% endif %}
+{% if dovecot_dsync %}
+userdb {
+	driver = ldap
+	args = /etc/dovecot/ldap-userdb.conf
+	override_fields = uid={{ dovecot_vmail_user }} gid={{ dovecot_vmail_group }} home={{ dovecot_mail_location }}/private/%u
+}
+{% else %}
+userdb {
+	driver = static
+	args = uid={{ dovecot_vmail_user }} gid={{ dovecot_vmail_group }} home={{ dovecot_mail_location }}/private/%u
+}
+{% endif %}
+service auth-worker {
+	user = dovenull
+	group = dovenull
+	process_limit = {{ dovecot_auth_worker_proclimit }}
+}
+service auth {
+	unix_listener auth-userdb {
+		mode = 0660
+		group = {{ dovecot_vmail_group }}
+	}
+}
+
+# Maildir
+mailbox_list_index = yes
+mail_prefetch_count = 10
+
+{% if dovecot_dsync %}
+# dsync
+mail_plugins = $mail_plugins notify replication
+replication_max_conns = {{ dovecot_dsync_max_connections }}
+doveadm_port = {{ dovecot_dsync_port }}
+doveadm_password = {{ dovecot_dsync_password }}
+replication_dsync_parameters = {{ dovecot_dsync_parameters }}
+{% if dovecot_dsync_sync_timeout != None %}
+plugin {
+	replication_sync_timeout = {{ dovecot_dsync_sync_timeout }}
+}
+{% endif %}
+{% if dovecot_dsync_target != None %}
+plugin {
+	mail_replica = tcps:{{ dovecot_dsync_target }}
+}
+
+service replicator {
+	process_min_avail = 1
+	user = {{ dovecot_vmail_user }}
+	unix_listener replicator-doveadm {
+		mode = 0666
+	}
+}
+{% endif %}
+service doveadm {
+	inet_listener {
+		port = {{ dovecot_dsync_port }}
+		ssl = yes
+	}
+	unix_listener doveadm-server {
+		mode = 0600
+		user = {{ dovecot_vmail_group }}
+	}
+}
+service aggregator {
+	fifo_listener replication-notify-fifo {
+		user = {{ dovecot_vmail_user }}
+	}
+	unix_listener replication-notify {
+		user = {{ dovecot_vmail_user }}
+	}
+}
+{% endif %}
+
+# ACLs
+mail_plugins = $mail_plugins acl
+plugin {
+	acl = vfile:/etc/dovecot/dovecot-acl
+	acl_globals_only = yes
+	acl_user = %u
+}
+
+# IMAP
+login_greeting = IMAP ready.
+imap_client_workarounds = tb-extra-mailbox-sep
+imap_hibernate_timeout = {{ dovecot_imap_hibernate_timeout }}
+service imap-login {
+	process_min_avail = {{ dovecot_imap_min_procs }}
+}
+service imap {
+	unix_listener imap-master {
+		user = $default_internal_user
+	}
+}
+service imap-hibernate {
+	unix_listener imap-hibernate {
+		mode = 0660
+		group = $default_internal_group
+	}
+}
+protocol imap {
+	mail_plugins = $mail_plugins imap_zlib imap_sieve imap_acl
+
+	ssl_cert = <{{ dovecot_cert }}
+	ssl_key = <{{ dovecot_key }}
+
+	# Do autoexpunge only for IMAP
+	namespace private {
+{% for name,conf in dovecot_private_mailboxes.items() if 'autoexpunge' in conf %}
+		mailbox {{ name }} {
+			autoexpunge = {{ conf.autoexpunge }}
+		}
+{% endfor %}
+	}
+}
+
+# LDA
+protocol lda {
+	mail_plugins = $mail_plugins sieve
+	log_path = /dev/stderr
+	info_log_path = /dev/stderr
+}
+
+# sieve
+protocol sieve {
+	ssl_cert = <{{ dovecot_cert }}
+	ssl_key = <{{ dovecot_key }}
+
+	managesieve_implementation_string = sieved
+}
+plugin {
+	sieve = file:{{ dovecot_mail_location }}/private/%u/sieve;active={{ dovecot_mail_location }}/private/%u/dovecot.sieve
+	sieve_user_log = {{ dovecot_mail_location }}/private/%u/sieve.log
+	sieve_pipe_bin_dir = {{ dovecot_mail_location }}/sieve-pipe
+	sieve_before = {{ dovecot_mail_location }}/sieve/before.sieve
+
+	# Extensions and plugins
+	sieve_plugins = sieve_imapsieve sieve_extprograms
+	sieve_extensions = +spamtest +spamtestplus
+	sieve_global_extensions = +vnd.dovecot.pipe
+
+	# Spamtest
+	sieve_spamtest_status_type = score
+	sieve_spamtest_max_value = 15.0
+	sieve_spamtest_status_header = \
+		X-Spam-Score: (-?[[:digit:]]+\.[[:digit:]]+) .*
+
+	# From anywhere to Junk folder
+	imapsieve_mailbox1_name = INBOX.Spam
+	imapsieve_mailbox1_causes = COPY
+	imapsieve_mailbox1_before = {{ dovecot_mail_location }}/sieve/report-spam.sieve
+
+	# From Junk folder to anywhere
+	imapsieve_mailbox2_name = *
+	imapsieve_mailbox2_from = INBOX.Spam
+	imapsieve_mailbox2_causes = COPY
+	imapsieve_mailbox2_before = {{ dovecot_mail_location }}/sieve/report-ham.sieve
+}
+
+# FTS
+mail_plugins = $mail_plugins fts fts_lucene
+plugin {
+	fts = lucene
+	fts_lucene = whitespace_chars=@.
+	fts_autoindex = {{ dovebool(dovecot_fts_autoindex) }}
+}
+
+# Namespaces
+namespace private {
+	separator = .
+	inbox = yes
+{% if dovecot_private_prefix != None %}
+	prefix = "{{ dovecot_private_prefix }}"
+{% endif %}
+{% for name,conf in dovecot_private_mailboxes.items() %}
+	mailbox {{ name }} {
+{% if 'special_use' in conf %}
+		special_use = {{ conf.special_use }}
+{% endif %}
+{% if 'auto' in conf %}
+		auto = {{ conf.auto }}
+{% endif %}
+	}
+{% endfor %}
+}

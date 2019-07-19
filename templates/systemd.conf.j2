@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+[Unit]
+After=rspamd.service rspamd.socket
+
+[Service]
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+NoNewPrivileges=yes
+RestrictRealtime=yes
+RuntimeDirectory=dovecot
+ReadWritePaths=/var/lib/dovecot {{ dovecot_mail_location }}

@@ -1,0 +1,57 @@
+---
+dovecot_release: 2.3
+dovecot_mail_location: /var/lib/imap
+dovecot_vmail_user: vmail
+dovecot_vmail_group: vmail
+
+# Network and TLS
+dovecot_listen:
+  - '*'
+  - '::'
+dovecot_tls: required
+dovecot_tls_min: TLSv1.2
+dovecot_disable_plain: true
+dovecot_tls_ciphers:
+  - TLS_AES_256_GCM_SHA384
+  - TLS_CHACHA20_POLY1305_SHA256
+  - TLS_AES_128_GCM_SHA256
+  - ECDHE-RSA-AES256-GCM-SHA384
+  - ECDHE-RSA-AES256-SHA384
+  - ECDHE-RSA-AES128-GCM-SHA256
+
+dovecot_default_client_limit: 400
+dovecot_auth_worker_max_count: 350
+dovecot_auth_worker_proclimit: 400
+dovecot_imap_min_procs: 4
+dovecot_imap_hibernate_timeout: 5s
+
+dovecot_rspamd_connect: null
+dovecot_rspamd_password: ""
+
+dovecot_ca_dir: /etc/ssl/certs
+dovecot_protected_mailboxes: []
+dovecot_extra_acls: ""
+dovecot_fts_autoindex: true
+
+dovecot_private_prefix: null
+dovecot_private_mailboxes: {}
+# dsync
+dovecot_dsync: false
+dovecot_dsync_port: 12345
+dovecot_dsync_target: null
+dovecot_dsync_max_connections: 10
+dovecot_dsync_sync_timeout: null
+dovecot_dsync_parameters: -d -N -l 3000 -U
+# LDAP
+dovecot_ldap_hosts: []
+dovecot_ldap_uris: []
+dovecot_ldap_auth_bind: yes
+dovecot_ldap_blocking: yes
+dovecot_ldap_tls: no
+dovecot_ldap_cert_file: null
+dovecot_ldap_cert_dir: null
+dovecot_ldap_require_cert: never
+dovecot_ldap_scope: subtree
+dovecot_ldap_pass_attrs:
+  - uid=user
+dovecot_ldap_master_pass_filter: null

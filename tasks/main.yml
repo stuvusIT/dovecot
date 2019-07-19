@@ -1,0 +1,159 @@
+---
+- name: Import dovecot key
+  apt_key:
+    url: https://repo.dovecot.org/DOVECOT-REPO-GPG
+
+- name: Add dovecot repository
+  apt_repository:
+    repo: deb https://repo.dovecot.org/ce-{{ dovecot_release }}-latest/debian/{{ ansible_distribution_release }} {{ ansible_distribution_release }} main
+    filename: dovecot
+
+- name: Install dovecot dependencies
+  apt:
+    name:
+      - dovecot-core
+      - dovecot-imapd
+      - dovecot-ldap
+      - dovecot-lucene
+      - dovecot-managesieved
+      - dovecot-sieve
+
+- name: Create configuration file
+  template:
+    src: dovecot.conf.j2
+    dest: /etc/dovecot/dovecot.conf
+    owner: root
+    group: root
+    mode: 0640
+  notify: Reload dovecot
+
+- name: Create LDAP passdb configuration
+  template:
+    src: ldap.conf.j2
+    dest: /etc/dovecot/ldap-passdb.conf
+    owner: root
+    group: root
+    mode: 0640
+  notify: Reload dovecot
+
+# I could use the same file, but the documentation
+# suggests different filenames to ensure different
+# connections are used which boosts performance as
+# the userdb lookups can be made async.
+- name: Create LDAP userdb configuration
+  file:
+    src: ldap-passdb.conf
+    dest: /etc/dovecot/ldap-userdb.conf
+    state: link
+    owner: root
+    group: root
+  when: dovecot_dsync
+  notify: Reload dovecot
+
+- name: Create LDAP master configuration
+  template:
+    src: ldap-master.conf.j2
+    dest: /etc/dovecot/ldap-master.conf
+    owner: root
+    group: root
+    mode: 0640
+  notify: Reload dovecot
+
+- name: Create virtual mail group
+  group:
+    name: "{{ dovecot_vmail_group }}"
+    system: true
+
+- name: Create virtual mail user
+  user:
+    name: "{{ dovecot_vmail_user }}"
+    group: "{{ dovecot_vmail_group }}"
+    comment: Virtual mail user
+    home: /var/empty
+    create_home: false
+    shell: /bin/false
+    system: true
+
+- name: Ensure permissions of replicator database
+  file:
+    dest: /var/lib/dovecot/replicator.db
+    state: touch
+    mode: 0600
+    owner: "{{ dovecot_vmail_user }}"
+    group: "{{ dovecot_vmail_group }}"
+  changed_when: false
+  when: dovecot_dsync
+
+- name: Create mail folders
+  file:
+    path: "{{ dovecot_mail_location }}/{{ item.name }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { name: "", owner: root, group: root, mode: "0755" }
+    - { name: private, owner: "{{ dovecot_vmail_user }}", group: "{{ dovecot_vmail_group }}", mode: "0750" }
+    - { name: sieve, owner: "{{ dovecot_vmail_user }}", group: "{{ dovecot_vmail_group }}", mode: "0755" }
+    - { name: sieve-pipe, owner: "{{ dovecot_vmail_user }}", group: "{{ dovecot_vmail_group }}", mode: "0755" }
+
+- name: Create sieve before script
+  template:
+    src: before.sieve.j2
+    dest: "{{ dovecot_mail_location }}/sieve/before.sieve"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Copy sieve spam scripts
+  template:
+    src: rspamd-pipe.sieve.j2
+    dest: "{{ dovecot_mail_location }}/sieve/report-{{ item }}.sieve"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+    - spam
+    - ham
+
+- name: Copy sieve pipe scripts
+  template:
+    src: rspamd-learn.j2
+    dest: "{{ dovecot_mail_location }}/sieve-pipe/report-{{ item }}"
+    owner: root
+    group: root
+    mode: 0755
+  loop:
+    - spam
+    - ham
+
+- name: Create ACL configuration
+  template:
+    src: dovecot-acl.j2
+    dest: /etc/dovecot/dovecot-acl
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Create dropin directory
+  file:
+    path: /etc/systemd/system/dovecot.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Create dropin
+  template:
+    src: systemd.conf.j2
+    dest: /etc/systemd/system/dovecot.service.d/ansible.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: Restart dovecot
+
+- name: Start and enable dovecot
+  systemd:
+    name: dovecot.service
+    state: started
+    enabled: true
