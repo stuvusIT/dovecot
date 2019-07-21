@@ -135,6 +135,14 @@ plugin {
 	acl_user = %u
 }
 
+# FTS
+mail_plugins = $mail_plugins fts fts_lucene
+plugin {
+	fts = lucene
+	fts_lucene = whitespace_chars=@.
+	fts_autoindex = {{ dovebool(dovecot_fts_autoindex) }}
+}
+
 # IMAP
 login_greeting = IMAP ready.
 imap_client_workarounds = tb-extra-mailbox-sep
@@ -211,14 +219,6 @@ plugin {
 	imapsieve_mailbox2_from = INBOX.Spam
 	imapsieve_mailbox2_causes = COPY
 	imapsieve_mailbox2_before = {{ dovecot_mail_location }}/sieve/report-ham.sieve
-}
-
-# FTS
-mail_plugins = $mail_plugins fts fts_lucene
-plugin {
-	fts = lucene
-	fts_lucene = whitespace_chars=@.
-	fts_autoindex = {{ dovebool(dovecot_fts_autoindex) }}
 }
 
 # Namespaces
