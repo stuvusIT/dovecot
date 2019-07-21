@@ -4,6 +4,7 @@
 # Files and directories
 base_dir = /run/dovecot
 mail_location = maildir:{{ dovecot_mail_location }}/private/%u/maildir:LAYOUT=fs:CONTROL={{ dovecot_mail_location }}/private/%u/control:INDEX={{ dovecot_mail_location }}/private/%u/index:VOLATILEDIR=/tmp/dovecot/%u:UTF-8
+mail_attribute_dict = file:{{ dovecot_mail_location }}/private/%u/dovecot-attributes
 ssl_dh = <{{ dovecot_dhparam }}
 ssl_client_ca_dir = {{ dovecot_ca_dir }}
 {% if dovecot_dsync %}
@@ -154,6 +155,7 @@ service imap-hibernate {
 }
 protocol imap {
 	mail_plugins = $mail_plugins imap_zlib imap_sieve imap_acl
+	imap_metadata = yes
 
 	ssl_cert = <{{ dovecot_cert }}
 	ssl_key = <{{ dovecot_key }}
