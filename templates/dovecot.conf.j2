@@ -116,6 +116,7 @@ service doveadm {
 		mode = 0600
 		user = {{ dovecot_vmail_group }}
 	}
+	vsz_limit = 0
 }
 service aggregator {
 	fifo_listener replication-notify-fifo {
