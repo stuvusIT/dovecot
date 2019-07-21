@@ -4,6 +4,7 @@
 # Files and directories
 base_dir = /run/dovecot
 mail_location = maildir:{{ dovecot_mail_location }}/private/%u/maildir:LAYOUT=fs:CONTROL={{ dovecot_mail_location }}/private/%u/control:INDEX={{ dovecot_mail_location }}/private/%u/index:VOLATILEDIR=/tmp/dovecot/%u:UTF-8
+mail_attribute_dict = file:{{ dovecot_mail_location }}/private/%u/dovecot-attributes
 ssl_dh = <{{ dovecot_dhparam }}
 ssl_client_ca_dir = {{ dovecot_ca_dir }}
 {% if dovecot_dsync %}
@@ -115,6 +116,7 @@ service doveadm {
 		mode = 0600
 		user = {{ dovecot_vmail_group }}
 	}
+	vsz_limit = 0
 }
 service aggregator {
 	fifo_listener replication-notify-fifo {
@@ -132,6 +134,14 @@ plugin {
 	acl = vfile:/etc/dovecot/dovecot-acl
 	acl_globals_only = yes
 	acl_user = %u
+}
+
+# FTS
+mail_plugins = $mail_plugins fts fts_lucene
+plugin {
+	fts = lucene
+	fts_lucene = whitespace_chars=@.
+	fts_autoindex = {{ dovebool(dovecot_fts_autoindex) }}
 }
 
 # IMAP
@@ -154,6 +164,7 @@ service imap-hibernate {
 }
 protocol imap {
 	mail_plugins = $mail_plugins imap_zlib imap_sieve imap_acl
+	imap_metadata = yes
 
 	ssl_cert = <{{ dovecot_cert }}
 	ssl_key = <{{ dovecot_key }}
@@ -209,14 +220,6 @@ plugin {
 	imapsieve_mailbox2_from = INBOX.Spam
 	imapsieve_mailbox2_causes = COPY
 	imapsieve_mailbox2_before = {{ dovecot_mail_location }}/sieve/report-ham.sieve
-}
-
-# FTS
-mail_plugins = $mail_plugins fts fts_lucene
-plugin {
-	fts = lucene
-	fts_lucene = whitespace_chars=@.
-	fts_autoindex = {{ dovebool(dovecot_fts_autoindex) }}
 }
 
 # Namespaces
