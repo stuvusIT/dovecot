@@ -107,6 +107,7 @@ service replicator {
 	}
 }
 {% endif %}
+default_vsz_limit = 0
 service doveadm {
 	inet_listener {
 		port = {{ dovecot_dsync_port }}
@@ -116,7 +117,6 @@ service doveadm {
 		mode = 0600
 		user = {{ dovecot_vmail_group }}
 	}
-	vsz_limit = 0
 }
 service aggregator {
 	fifo_listener replication-notify-fifo {
