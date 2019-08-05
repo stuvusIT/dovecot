@@ -2,11 +2,13 @@
 - name: Import dovecot key
   apt_key:
     url: https://repo.dovecot.org/DOVECOT-REPO-GPG
+  when: "ansible_distribution_release == 'stretch'"
 
 - name: Add dovecot repository
   apt_repository:
     repo: deb https://repo.dovecot.org/ce-{{ dovecot_release }}-latest/debian/{{ ansible_distribution_release }} {{ ansible_distribution_release }} main
     filename: dovecot
+  when: "ansible_distribution_release == 'stretch'"
 
 - name: Install dovecot dependencies
   apt:
@@ -17,6 +19,21 @@
       - dovecot-lucene
       - dovecot-managesieved
       - dovecot-sieve
+
+- name: Create virtual mail group
+  group:
+    name: "{{ dovecot_vmail_group }}"
+    system: true
+
+- name: Create virtual mail user
+  user:
+    name: "{{ dovecot_vmail_user }}"
+    group: "{{ dovecot_vmail_group }}"
+    comment: Virtual mail user
+    home: /var/empty
+    create_home: false
+    shell: /bin/false
+    system: true
 
 - name: Create configuration file
   template:
@@ -58,21 +75,6 @@
     group: root
     mode: 0640
   notify: Reload dovecot
-
-- name: Create virtual mail group
-  group:
-    name: "{{ dovecot_vmail_group }}"
-    system: true
-
-- name: Create virtual mail user
-  user:
-    name: "{{ dovecot_vmail_user }}"
-    group: "{{ dovecot_vmail_group }}"
-    comment: Virtual mail user
-    home: /var/empty
-    create_home: false
-    shell: /bin/false
-    system: true
 
 - name: Ensure permissions of replicator database
   file:
