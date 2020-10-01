@@ -22,8 +22,9 @@ dovecot_tls_ciphers:
 dovecot_default_client_limit: 400
 dovecot_auth_worker_max_count: 350
 dovecot_auth_worker_proclimit: 400
-dovecot_imap_min_procs: 4
 dovecot_imap_hibernate_timeout: 5s
+dovecot_imap_process_limit: 100
+dovecot_imap_process_min_avail: 4
 
 dovecot_rspamd_connect: null
 dovecot_rspamd_password: ""
