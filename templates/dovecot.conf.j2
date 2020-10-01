@@ -149,7 +149,8 @@ login_greeting = IMAP ready.
 imap_client_workarounds = tb-extra-mailbox-sep
 imap_hibernate_timeout = {{ dovecot_imap_hibernate_timeout }}
 service imap-login {
-	process_min_avail = {{ dovecot_imap_min_procs }}
+	process_limit = {{ dovecot_imap_process_limit }}
+	process_min_avail = {{ dovecot_imap_process_min_avail }}
 }
 service imap {
 	unix_listener imap-master {

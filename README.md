@@ -13,7 +13,7 @@ Debian
 ## Role Variables
 
 | Name                              | Default / Mandatory     | Description                                                                              |
-|:----------------------------------|:-----------------------:|:-----------------------------------------------------------------------------------------|
+| :-------------------------------- | :---------------------- | :--------------------------------------------------------------------------------------- |
 | `dovecot_release`                 | `2.3`                   | Release of Dovecot to install (relevant for the apt repository)                          |
 | `dovecot_mail_location`           | `/var/lib/imap`         | Location for all mail-related files                                                      |
 | `dovecot_vmail_user`              | `vmail`                 | User which will own all mail                                                             |
@@ -55,7 +55,8 @@ Debian
 | `dovecot_dsync_sync_timeout`      | `null`                  | Set to a non-null value to enable synchronous replication                                |
 | `dovecot_dsync_target`            | `null`                  | Dsync target to replicate with                                                           |
 | `dovecot_imap_hibernate_timeout`  | `5s`                    | Time for clients to idle before being pushed to the hibernation process                  |
-| `dovecot_imap_min_procs`          | `4`                     | Minimum amount of IMAP processes to keep available                                       |
+| `dovecot_imap_process_limit`      | `100`                   | Maximum number of IMAP processes                                                         |
+| `dovecot_imap_process_min_avail`  | `4`                     | Minimum number of available IMAP processes to accept connections                         |
 | `dovecot_private_prefix`          | `null`                  | Prefix for the private dovecot namespace                                                 |
 | `dovecot_private_mailboxes`       | `{}`                    | Mailbox configurations for the private mailboxes (see below)                             |
 | `dovecot_rspamd_connect`          | `null`                  | Rspamd host to connect to for reporting spam                                             |
@@ -66,7 +67,7 @@ Debian
 
 ### mailbox configuration
 | Name          | Default / Mandatory | Description                                                                             |
-|:--------------|:-------------------:|:----------------------------------------------------------------------------------------|
+| :------------ | :------------------ | :-------------------------------------------------------------------------------------- |
 | `special_use` |                     | IMAP special-use flag                                                                   |
 | `auto`        |                     | `auto` value for Dovecot                                                                |
 | `autoexpunge` |                     | Time after which mails are automatically expunged (is applied to the IMAP service only) |
