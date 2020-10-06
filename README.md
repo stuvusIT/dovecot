@@ -55,8 +55,8 @@ Debian
 | `dovecot_dsync_sync_timeout`      | `null`                  | Set to a non-null value to enable synchronous replication                                |
 | `dovecot_dsync_target`            | `null`                  | Dsync target to replicate with                                                           |
 | `dovecot_imap_hibernate_timeout`  | `5s`                    | Time for clients to idle before being pushed to the hibernation process                  |
-| `dovecot_imap_process_limit`      | `100`                   | Maximum number of IMAP processes                                                         |
-| `dovecot_imap_process_min_avail`  | `4`                     | Minimum number of available IMAP processes to accept connections                         |
+| `dovecot_imap_process_limit`      | `100`                   | Maximum number of IMAP login processes                                                   |
+| `dovecot_imap_process_min_avail`  | `4`                     | Minimum number of available IMAP login processes to accept connections                   |
 | `dovecot_private_prefix`          | `null`                  | Prefix for the private dovecot namespace                                                 |
 | `dovecot_private_mailboxes`       | `{}`                    | Mailbox configurations for the private mailboxes (see below)                             |
 | `dovecot_rspamd_connect`          | `null`                  | Rspamd host to connect to for reporting spam                                             |
