@@ -202,14 +202,7 @@ plugin {
 
 	# Extensions and plugins
 	sieve_plugins = sieve_imapsieve sieve_extprograms
-	sieve_extensions = +spamtest +spamtestplus
 	sieve_global_extensions = +vnd.dovecot.pipe
-
-	# Spamtest
-	sieve_spamtest_status_type = score
-	sieve_spamtest_max_value = 15.0
-	sieve_spamtest_status_header = \
-		X-Spam-Score: (-?[[:digit:]]+\.[[:digit:]]+) .*
 
 	# From anywhere to Junk folder
 	imapsieve_mailbox1_name = INBOX.Spam
