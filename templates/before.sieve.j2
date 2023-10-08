@@ -1,5 +1,5 @@
 # {{ ansible_managed }}
 require "fileinto";
-if header :is "X-Spam-Status" "Yes" {
+if header :contains "X-Spam-Status" "Yes" {
     fileinto "INBOX.Spam";
 }
