@@ -32,3 +32,7 @@ scope = {{ dovecot_ldap_scope }}
 # Pass
 pass_attrs = {{ dovecot_ldap_pass_attrs | join(', ') }}
 pass_filter = {{ dovecot_ldap_pass_filter }}
+
+# User
+user_attrs = {{ dovecot_ldap_user_attrs | join(', ') }}
+user_filter = {{ dovecot_ldap_user_filter }}

@@ -55,4 +55,5 @@ dovecot_ldap_require_cert: never
 dovecot_ldap_scope: subtree
 dovecot_ldap_pass_attrs:
   - uid=user
+dovecot_ldap_user_attrs: "{{ dovecot_ldap_pass_attrs }}"
 dovecot_ldap_master_pass_filter: null
